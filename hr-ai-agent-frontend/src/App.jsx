@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 import ApplyPage from './pages/public/ApplyPage.jsx'
 import HomePage from './pages/public/HomePage.jsx'
 import JobDetailsPage from './pages/public/JobDetailsPage.jsx'
@@ -21,11 +22,29 @@ function App() {
         <Route path="/jobs/:jobId/apply" element={<ApplyPage />} />
         <Route path="/recruiter/signup" element={<RecruiterSignupPage />} />
         <Route path="/recruiter/login" element={<RecruiterLoginPage />} />
-        <Route path="/recruiter/dashboard" element={<RecruiterDashboardPage />} />
-        <Route path="/recruiter/jobs/create" element={<CreateJobPage />} />
+        <Route
+          path="/recruiter/dashboard"
+          element={
+            <ProtectedRoute>
+              <RecruiterDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recruiter/jobs/create"
+          element={
+            <ProtectedRoute>
+              <CreateJobPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/recruiter/jobs/:jobId/applications"
-          element={<JobApplicantsPage />}
+          element={
+            <ProtectedRoute>
+              <JobApplicantsPage />
+            </ProtectedRoute>
+          }
         />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

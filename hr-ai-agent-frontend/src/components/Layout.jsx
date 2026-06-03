@@ -7,7 +7,7 @@ function Layout({ children }) {
       <main className="main-content">{children}</main>
       <footer className="footer">
         <span>HR AI Agent Platform</span>
-        <span>Frontend template using placeholder data only</span>
+        <span>Frontend connected through the centralized API layer</span>
       </footer>
     </div>
   )

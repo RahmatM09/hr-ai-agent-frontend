@@ -12,6 +12,10 @@ function recruiterSignup(signupData) {
   })
 }
 
+function signupRecruiter(signupData) {
+  return recruiterSignup(signupData)
+}
+
 async function recruiterLogin(loginData) {
   const data = await request('/auth/login', {
     method: 'POST',
@@ -27,6 +31,10 @@ async function recruiterLogin(loginData) {
   return data
 }
 
+function loginRecruiter(loginData) {
+  return recruiterLogin(loginData)
+}
+
 function getCurrentRecruiter() {
   return request('/auth/me', {
     authenticated: true,
@@ -40,7 +48,9 @@ function logoutRecruiter() {
 export {
   getCurrentRecruiter,
   isRecruiterLoggedIn,
+  loginRecruiter,
   logoutRecruiter,
   recruiterLogin,
   recruiterSignup,
+  signupRecruiter,
 }

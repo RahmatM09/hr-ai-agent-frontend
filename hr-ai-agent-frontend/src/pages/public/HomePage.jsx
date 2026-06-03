@@ -32,8 +32,8 @@ function HomePage() {
           <h1>HR AI Agent Platform</h1>
           <p>
             A modern frontend for recruiters and applicants, designed to show
-            job posting, resume intake, and AI-assisted hiring decisions before
-            the backend is connected.
+            job posting, resume intake, and AI-assisted hiring decisions through
+            a centralized backend API layer.
           </p>
           <div className="hero-actions">
             <Button to="/jobs">Browse Jobs</Button>

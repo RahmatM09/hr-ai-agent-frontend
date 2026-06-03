@@ -1,6 +1,24 @@
 import StatusBadge from './StatusBadge.jsx'
 
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value
+  }
+
+  if (!value) {
+    return ['Not provided']
+  }
+
+  return String(value)
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
 function ApplicantCard({ applicant }) {
+  const strengths = normalizeList(applicant.ai_strengths)
+  const weaknesses = normalizeList(applicant.ai_weaknesses)
+
   return (
     <article className="applicant-card">
       <div className="applicant-header">
@@ -10,25 +28,25 @@ function ApplicantCard({ applicant }) {
         </div>
         <div className="score-block">
           <span>AI Score</span>
-          <strong>{applicant.ai_score}</strong>
+          <strong>{applicant.ai_score ?? 'N/A'}</strong>
         </div>
       </div>
 
       <div className="applicant-meta">
-        <StatusBadge status={applicant.ai_status} />
-        <span>{applicant.evaluated_at}</span>
+        <StatusBadge status={applicant.ai_status || 'pending'} />
+        <span>{applicant.evaluated_at || applicant.created_at || 'Not evaluated yet'}</span>
         <span>
-          {applicant.ai_provider} / {applicant.ai_model}
+          {applicant.ai_provider || 'AI provider'} / {applicant.ai_model || 'model'}
         </span>
       </div>
 
-      <p>{applicant.ai_reason}</p>
+      <p>{applicant.ai_reason || 'No AI reason has been recorded yet.'}</p>
 
       <div className="ai-grid">
         <div>
           <h4>Strengths</h4>
           <ul>
-            {applicant.ai_strengths.map((strength) => (
+            {strengths.map((strength) => (
               <li key={strength}>{strength}</li>
             ))}
           </ul>
@@ -36,7 +54,7 @@ function ApplicantCard({ applicant }) {
         <div>
           <h4>Weaknesses</h4>
           <ul>
-            {applicant.ai_weaknesses.map((weakness) => (
+            {weaknesses.map((weakness) => (
               <li key={weakness}>{weakness}</li>
             ))}
           </ul>
@@ -45,7 +63,7 @@ function ApplicantCard({ applicant }) {
 
       <div className="recommendation">
         <span>Recommendation</span>
-        <p>{applicant.ai_recommendation}</p>
+        <p>{applicant.ai_recommendation || 'No recommendation has been recorded yet.'}</p>
       </div>
     </article>
   )

@@ -2,7 +2,10 @@ import Button from './Button.jsx'
 import StatusBadge from './StatusBadge.jsx'
 
 function JobCard({ job, compact = false }) {
-  const requirementPreview = job.requirements.slice(0, 2).join(' | ')
+  const requirements = Array.isArray(job.requirements)
+    ? job.requirements
+    : String(job.requirements || '').split(',').map((item) => item.trim()).filter(Boolean)
+  const requirementPreview = requirements.slice(0, 2).join(' | ')
 
   return (
     <article className={`job-card ${compact ? 'job-card-compact' : ''}`}>
@@ -14,7 +17,9 @@ function JobCard({ job, compact = false }) {
       <h2>{job.title}</h2>
       <p className="muted">{job.location}</p>
       <p>{job.description}</p>
-      <p className="requirement-preview">{requirementPreview}</p>
+      {requirementPreview && (
+        <p className="requirement-preview">{requirementPreview}</p>
+      )}
 
       <div className="card-actions">
         <Button to={`/jobs/${job.id}`} variant="secondary">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { loginRecruiter } from '../../api/authApi.js'
 import Button from '../../components/Button.jsx'
 import PageHeader from '../../components/PageHeader.jsx'
 
@@ -7,11 +8,22 @@ function RecruiterLoginPage() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    localStorage.setItem('hr_ai_agent_demo_token', 'demo-token')
-    navigate('/recruiter/dashboard')
+    setError('')
+
+    try {
+      setIsSubmitting(true)
+      await loginRecruiter({ email, password })
+      navigate('/recruiter/dashboard')
+    } catch (apiError) {
+      setError(apiError.message || 'Could not log in.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -19,13 +31,14 @@ function RecruiterLoginPage() {
       <PageHeader
         eyebrow="Recruiter login"
         title="Access hiring dashboard"
-        description="This demo login stores a placeholder token only. Real JWT authentication will be added later."
+        description="Log in with your recruiter account to access private dashboard data."
       />
 
       <form className="form-card auth-card" onSubmit={handleSubmit}>
         <label>
           Email
           <input
+            disabled={isSubmitting}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="recruiter@example.com"
             required
@@ -36,6 +49,7 @@ function RecruiterLoginPage() {
         <label>
           Password
           <input
+            disabled={isSubmitting}
             onChange={(event) => setPassword(event.target.value)}
             required
             type="password"
@@ -43,7 +57,11 @@ function RecruiterLoginPage() {
           />
         </label>
 
-        <Button type="submit">Log In</Button>
+        {error && <p className="form-error">{error}</p>}
+
+        <Button disabled={isSubmitting} type="submit">
+          {isSubmitting ? 'Logging in...' : 'Log In'}
+        </Button>
         <p className="form-link">
           New recruiter? <Link to="/recruiter/signup">Create an account</Link>
         </p>

@@ -6,10 +6,23 @@ function getMyJobs() {
   })
 }
 
+function getRecruiterJobs() {
+  return getMyJobs()
+}
+
 function getJobApplications(jobId) {
   return request(`/dashboard/jobs/${jobId}/applications`, {
     authenticated: true,
   })
 }
 
-export { getJobApplications, getMyJobs }
+function getApplicantsForJob(jobId) {
+  return getJobApplications(jobId)
+}
+
+export {
+  getApplicantsForJob,
+  getJobApplications,
+  getMyJobs,
+  getRecruiterJobs,
+}

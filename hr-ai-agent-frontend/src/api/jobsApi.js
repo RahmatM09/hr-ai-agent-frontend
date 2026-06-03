@@ -8,6 +8,10 @@ function getPublicJobById(jobId) {
   return request(`/jobs/${jobId}`)
 }
 
+function getPublicJobDetails(jobId) {
+  return getPublicJobById(jobId)
+}
+
 function createRecruiterJob(jobData) {
   return request('/jobs/', {
     method: 'POST',
@@ -16,4 +20,14 @@ function createRecruiterJob(jobData) {
   })
 }
 
-export { createRecruiterJob, getPublicJobById, getPublicJobs }
+function createJob(jobData) {
+  return createRecruiterJob(jobData)
+}
+
+export {
+  createJob,
+  createRecruiterJob,
+  getPublicJobById,
+  getPublicJobDetails,
+  getPublicJobs,
+}

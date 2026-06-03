@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { isRecruiterLoggedIn } from '../../api/authApi.js'
+import { createJob } from '../../api/jobsApi.js'
 import Button from '../../components/Button.jsx'
 import PageHeader from '../../components/PageHeader.jsx'
 
@@ -10,17 +13,44 @@ const initialForm = {
 }
 
 function CreateJobPage() {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState(initialForm)
-  const [submitted, setSubmitted] = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!isRecruiterLoggedIn()) {
+      navigate('/recruiter/login', { replace: true })
+    }
+  }, [navigate])
 
   function handleChange(event) {
     const { name, value } = event.target
     setFormData((currentData) => ({ ...currentData, [name]: value }))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    setSubmitted(true)
+    setError('')
+    setMessage('')
+
+    try {
+      setIsSubmitting(true)
+      await createJob({
+        title: formData.title,
+        description: formData.description,
+        requirements: formData.requirements,
+        location: formData.location,
+      })
+      setMessage('Job created successfully. Redirecting to dashboard...')
+      setFormData(initialForm)
+      window.setTimeout(() => navigate('/recruiter/dashboard'), 900)
+    } catch (apiError) {
+      setError(apiError.message || 'Could not create job.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -28,19 +58,16 @@ function CreateJobPage() {
       <PageHeader
         eyebrow="Recruiter workflow"
         title="Create new job"
-        description="This form will later send a token-authenticated request to the backend. For now, it only submits locally."
+        description="Create a recruiter-owned job using a token-authenticated backend request."
       />
 
-      {submitted && (
-        <section className="success-strip">
-          Demo job saved locally. Backend job creation will be connected in the next lecture.
-        </section>
-      )}
+      {message && <section className="success-strip">{message}</section>}
 
       <form className="form-card wide-form" onSubmit={handleSubmit}>
         <label>
           Job title
           <input
+            disabled={isSubmitting}
             name="title"
             onChange={handleChange}
             placeholder="Senior Backend Developer"
@@ -53,6 +80,7 @@ function CreateJobPage() {
         <label>
           Location
           <input
+            disabled={isSubmitting}
             name="location"
             onChange={handleChange}
             placeholder="Remote - United States"
@@ -65,6 +93,7 @@ function CreateJobPage() {
         <label>
           Description
           <textarea
+            disabled={isSubmitting}
             name="description"
             onChange={handleChange}
             placeholder="Describe the role, responsibilities, and team context."
@@ -77,16 +106,21 @@ function CreateJobPage() {
         <label>
           Requirements
           <textarea
+            disabled={isSubmitting}
             name="requirements"
             onChange={handleChange}
-            placeholder="List requirements. Later this can be sent to the backend as job criteria."
+            placeholder="List requirements for the backend job criteria."
             required
             rows="5"
             value={formData.requirements}
           />
         </label>
 
-        <Button type="submit">Preview Local Job</Button>
+        {error && <p className="form-error">{error}</p>}
+
+        <Button disabled={isSubmitting} type="submit">
+          {isSubmitting ? 'Creating job...' : 'Create Job'}
+        </Button>
       </form>
     </div>
   )

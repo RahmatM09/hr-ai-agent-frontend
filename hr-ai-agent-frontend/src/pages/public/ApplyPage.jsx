@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { applyToJob } from '../../api/applicationsApi.js'
+import { getPublicJobDetails } from '../../api/jobsApi.js'
 import Button from '../../components/Button.jsx'
 import EmptyState from '../../components/EmptyState.jsx'
 import PageHeader from '../../components/PageHeader.jsx'
-import { jobs } from '../../data/placeholderData.js'
 
 const initialForm = {
   applicantName: '',
@@ -14,21 +15,33 @@ const initialForm = {
 
 function ApplyPage() {
   const { jobId } = useParams()
-  const job = jobs.find((currentJob) => currentJob.id === jobId)
+  const [job, setJob] = useState(null)
   const [formData, setFormData] = useState(initialForm)
   const [error, setError] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [isLoadingJob, setIsLoadingJob] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submittedResponse, setSubmittedResponse] = useState(null)
 
-  if (!job) {
-    return (
-      <EmptyState
-        title="Job not found"
-        message="You cannot apply because this job does not exist in the placeholder data."
-        actionLabel="Back to jobs"
-        actionTo="/jobs"
-      />
-    )
-  }
+  useEffect(() => {
+    async function loadJob() {
+      try {
+        setIsLoadingJob(true)
+        setError('')
+        const data = await getPublicJobDetails(jobId)
+        setJob(data)
+      } catch (apiError) {
+        if (apiError.status === 404) {
+          setJob(null)
+        } else {
+          setError(apiError.message || 'Could not load this job.')
+        }
+      } finally {
+        setIsLoadingJob(false)
+      }
+    }
+
+    loadJob()
+  }, [jobId])
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -40,7 +53,7 @@ function ApplyPage() {
     setFormData((currentData) => ({ ...currentData, resumeFile: selectedFile }))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setError('')
 
@@ -49,23 +62,73 @@ function ApplyPage() {
       return
     }
 
-    if (formData.resumeFile.type !== 'application/pdf') {
+    if (formData.resumeFile.type && formData.resumeFile.type !== 'application/pdf') {
       setError('Please select a PDF resume file.')
       return
     }
 
-    setSubmitted(true)
+    try {
+      setIsSubmitting(true)
+      const response = await applyToJob(jobId, {
+        name: formData.applicantName,
+        email: formData.applicantEmail,
+        resume: formData.resumeFile,
+      })
+      setSubmittedResponse(response || {})
+    } catch (apiError) {
+      setError(apiError.message || 'Could not submit this application.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  if (submitted) {
+  if (isLoadingJob) {
+    return (
+      <EmptyState
+        title="Loading application"
+        message="Fetching the job details before opening the form."
+      />
+    )
+  }
+
+  if (!job && !error) {
+    return (
+      <EmptyState
+        title="Job not found"
+        message="You cannot apply because this job does not exist."
+        actionLabel="Back to jobs"
+        actionTo="/jobs"
+      />
+    )
+  }
+
+  if (!job && error) {
+    return <EmptyState title="Could not load application" message={error} />
+  }
+
+  if (submittedResponse) {
+    const aiResult = submittedResponse.ai_result || {}
+
     return (
       <section className="success-card">
-        <p className="eyebrow">Application saved locally</p>
+        <p className="eyebrow">Application submitted</p>
         <h1>Application submitted successfully.</h1>
         <p>
-          In the next version, this form will send the resume to the backend AI
-          evaluation workflow.
+          Your resume was uploaded to the backend application workflow.
         </p>
+
+        <div className="note-box">
+          {submittedResponse.application_id && (
+            <p>Application ID: {submittedResponse.application_id}</p>
+          )}
+          {typeof submittedResponse.email_sent !== 'undefined' && (
+            <p>Email sent: {submittedResponse.email_sent ? 'Yes' : 'No'}</p>
+          )}
+          {typeof aiResult.score !== 'undefined' && <p>AI score: {aiResult.score}</p>}
+          {aiResult.status && <p>AI status: {aiResult.status}</p>}
+          {aiResult.reason && <p>AI reason: {aiResult.reason}</p>}
+        </div>
+
         <Button to="/jobs" variant="secondary">
           Back to Jobs
         </Button>
@@ -77,8 +140,10 @@ function ApplyPage() {
     <div>
       <PageHeader
         eyebrow="Apply now"
-        title={job.title}
-        description={`${job.recruiter_company_name} | ${job.location}`}
+        title={job?.title || 'Job application'}
+        description={`${job?.recruiter_company_name || 'Recruiter'} | ${
+          job?.location || 'Location not provided'
+        }`}
       />
 
       <form className="form-card" onSubmit={handleSubmit}>
@@ -108,7 +173,13 @@ function ApplyPage() {
 
         <label>
           Resume PDF
-          <input accept="application/pdf" onChange={handleFileChange} required type="file" />
+          <input
+            accept="application/pdf"
+            disabled={isSubmitting}
+            onChange={handleFileChange}
+            required
+            type="file"
+          />
           <span className="file-name">
             {formData.resumeFile ? formData.resumeFile.name : 'No file selected'}
           </span>
@@ -127,7 +198,9 @@ function ApplyPage() {
 
         {error && <p className="form-error">{error}</p>}
 
-        <Button type="submit">Submit Application</Button>
+        <Button disabled={isSubmitting} type="submit">
+          {isSubmitting ? 'Submitting...' : 'Submit Application'}
+        </Button>
       </form>
     </div>
   )
